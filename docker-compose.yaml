@@ -29,4 +29,4 @@ volumes:
   mongovol:
     driver: local
 networks:
-  javawebappoverlay:
+  javawebappoverlay
