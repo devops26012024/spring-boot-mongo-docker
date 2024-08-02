@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+   name: mongodb
+   namespace: test-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: springappconfig
+              key: mongodb_username
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: springappsecret
+              key: mongodb_password
+        livenessProbe:
+          tcpSocket:
+            port: 27017
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          tcpSocket:
+            port: 27017
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 5
+        volumeMounts:
+        - name: mongovol
+          mountPath: /data/db
+      volumes:
+      - name: mongovol
+        persistentVolumeClaim:
+          claimName: mongopvc
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: springappconfig
+  namespace: test-ns
+data:
+  mongodb_username: devdb
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: springappsecret
+  namespace: test-ns
+type: Opaque
+stringData:
+  mongodb_password: devdb@123
